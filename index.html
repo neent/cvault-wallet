@@ -3,7 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>CVault — Wallet</title>
+    <title>CVault Wallet</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="CVault">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="theme-color" content="#06080d">
+    <meta name="msapplication-TileColor" content="#06080d">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon.png">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
@@ -997,6 +1006,23 @@
             </div>
         </div>
 
+        <!-- BALANCE EDITOR -->
+        <div style="margin-top:24px; padding:20px; background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius-lg); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);">
+            <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
+                <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-dim);display:grid;place-items:center;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                </div>
+                <div>
+                    <div style="font-size:15px;font-weight:700;">Edytuj saldo</div>
+                    <div style="font-size:12px;color:var(--text-3);">Zmień wyświetlaną kwotę portfela</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:8px;">
+                <input class="field-input" id="editBalance" placeholder="Wpisz kwotę..." type="text" inputmode="decimal" style="flex:1;font-size:18px;font-weight:700;">
+                <button class="submit-btn" onclick="saveBalance()" style="flex:0 0 auto;width:auto;padding:14px 24px;font-size:14px;">Zapisz</button>
+            </div>
+        </div>
+
     </div>
 
     <!-- BOTTOM NAV -->
@@ -1544,6 +1570,26 @@
         };
         logoImg.src = 'logo.png';
         return;
+    }
+
+    // Balance editor
+    function saveBalance() {
+        const input = document.getElementById('editBalance');
+        const val = parseFloat(input.value.replace(/[^0-9.]/g, ''));
+        if (isNaN(val) || val < 0) { input.style.borderColor = 'var(--red)'; setTimeout(() => input.style.borderColor = '', 1000); return; }
+        const el = document.getElementById('balanceNum');
+        el.textContent = val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        el.style.filter = '';
+        hidden = false;
+        // Update change display
+        const change = document.getElementById('balChange');
+        const pct = (Math.random() * 10 + 1).toFixed(2);
+        const usd = (val * parseFloat(pct) / 100).toFixed(2);
+        const isUp = Math.random() > 0.3;
+        change.className = 'balance-change ' + (isUp ? 'up' : 'down');
+        change.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="' + (isUp ? '18 15 12 9 6 15' : '6 9 12 15 18 9') + '"/></svg>' + (isUp ? '+' : '-') + '$' + usd + ' (' + (isUp ? '+' : '-') + pct + '%) dzisiaj';
+        input.value = '';
+        input.placeholder = 'Wpisz kwotę...';
     }
 
     // Pay method switching
