@@ -2,7 +2,7 @@
     "name": "CVault Wallet",
     "short_name": "CVault",
     "description": "Your crypto portfolio",
-    "start_url": "/",
+    "start_url": "/cvault-wallet/",
     "display": "standalone",
     "background_color": "#06080d",
     "theme_color": "#06080d",
