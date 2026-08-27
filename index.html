@@ -766,32 +766,6 @@
         <div class="tab-panel active" id="panel-tokens">
             <div class="token-list">
 
-                <div class="token-row" onclick="openModal('tokenDetail')">
-                    <div class="token-logo btc">₿</div>
-                    <div class="token-name-col">
-                        <div class="token-title">Bitcoin</div>
-                        <div class="token-sub">BTC</div>
-                    </div>
-                    <div class="token-val-col">
-                        <div class="token-usd">$12,450.00</div>
-                        <div class="token-crypto">0.1846 BTC</div>
-                        <span class="pct up">+3.21%</span>
-                    </div>
-                </div>
-
-                <div class="token-row">
-                    <div class="token-logo eth">Ξ</div>
-                    <div class="token-name-col">
-                        <div class="token-title">Ethereum</div>
-                        <div class="token-sub">ETH</div>
-                    </div>
-                    <div class="token-val-col">
-                        <div class="token-usd">$8,234.72</div>
-                        <div class="token-crypto">3.124 ETH</div>
-                        <span class="pct up">+7.82%</span>
-                    </div>
-                </div>
-
                 <div class="token-row">
                     <div class="token-logo sol">◎</div>
                     <div class="token-name-col">
@@ -799,74 +773,9 @@
                         <div class="token-sub">SOL</div>
                     </div>
                     <div class="token-val-col">
-                        <div class="token-usd">$2,891.20</div>
-                        <div class="token-crypto">18.50 SOL</div>
-                        <span class="pct up">+12.4%</span>
-                    </div>
-                </div>
-
-                <div class="token-row">
-                    <div class="token-logo bnb">B</div>
-                    <div class="token-name-col">
-                        <div class="token-title">BNB</div>
-                        <div class="token-sub">BNB</div>
-                    </div>
-                    <div class="token-val-col">
-                        <div class="token-usd">$1,125.55</div>
-                        <div class="token-crypto">3.50 BNB</div>
-                        <span class="pct down">-1.30%</span>
-                    </div>
-                </div>
-
-                <div class="token-row">
-                    <div class="token-logo usdt">₮</div>
-                    <div class="token-name-col">
-                        <div class="token-title">Tether</div>
-                        <div class="token-sub">USDT</div>
-                    </div>
-                    <div class="token-val-col">
-                        <div class="token-usd">$500.00</div>
-                        <div class="token-crypto">500.00 USDT</div>
-                        <span class="pct up">+0.01%</span>
-                    </div>
-                </div>
-
-                <div class="token-row">
-                    <div class="token-logo ada">₳</div>
-                    <div class="token-name-col">
-                        <div class="token-title">Cardano</div>
-                        <div class="token-sub">ADA</div>
-                    </div>
-                    <div class="token-val-col">
-                        <div class="token-usd">$680.00</div>
-                        <div class="token-crypto">1,200 ADA</div>
-                        <span class="pct up">+4.72%</span>
-                    </div>
-                </div>
-
-                <div class="token-row">
-                    <div class="token-logo dot">●</div>
-                    <div class="token-name-col">
-                        <div class="token-title">Polkadot</div>
-                        <div class="token-sub">DOT</div>
-                    </div>
-                    <div class="token-val-col">
-                        <div class="token-usd">$290.00</div>
-                        <div class="token-crypto">40.00 DOT</div>
-                        <span class="pct down">-2.10%</span>
-                    </div>
-                </div>
-
-                <div class="token-row">
-                    <div class="token-logo xrp">✕</div>
-                    <div class="token-name-col">
-                        <div class="token-title">XRP</div>
-                        <div class="token-sub">XRP</div>
-                    </div>
-                    <div class="token-val-col">
-                        <div class="token-usd">$160.00</div>
-                        <div class="token-crypto">320 XRP</div>
-                        <span class="pct up">+1.83%</span>
+                        <div class="token-usd" id="solUsd">$0.00</div>
+                        <div class="token-crypto" id="solAmount">0.00 SOL</div>
+                        <span class="pct up" id="solPct">+0.00%</span>
                     </div>
                 </div>
 
@@ -1597,6 +1506,13 @@
         const isUp = Math.random() > 0.3;
         change.className = 'balance-change ' + (isUp ? 'up' : 'down');
         change.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="' + (isUp ? '18 15 12 9 6 15' : '6 9 12 15 18 9') + '"/></svg>' + (isUp ? '+' : '-') + '$' + changeUsd + ' (' + (isUp ? '+' : '-') + pct + '%) dzisiaj';
+
+        // SOL token row
+        document.getElementById('solUsd').textContent = '$' + usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('solAmount').textContent = val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' SOL';
+        const solPct = document.getElementById('solPct');
+        solPct.textContent = (isUp ? '+' : '-') + pct + '%';
+        solPct.className = 'pct ' + (isUp ? 'up' : 'down');
 
         input.value = '';
         input.placeholder = '0.00';
