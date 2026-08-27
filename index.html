@@ -766,7 +766,7 @@
         <div class="tab-panel active" id="panel-tokens">
             <div class="token-list">
 
-                <div class="token-row">
+                <div class="token-row" onclick="openModal('tokenDetail')">
                     <div class="token-logo sol">◎</div>
                     <div class="token-name-col">
                         <div class="token-title">Solana</div>
@@ -1091,27 +1091,27 @@
             <!-- TOKEN DETAIL -->
             <div id="m-tokenDetail" style="display:none">
                 <div style="text-align:center;margin-bottom:24px">
-                    <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(145deg,#f7931a,#e8850e);display:inline-grid;place-items:center;font-size:28px;font-weight:800;color:#fff;margin-bottom:12px;box-shadow:0 8px 32px rgba(247,147,26,0.3)">₿</div>
-                    <div style="font-size:24px;font-weight:800">Bitcoin</div>
-                    <div style="font-size:14px;color:var(--text-3);font-weight:500;margin-top:2px">BTC</div>
+                    <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(145deg,#9945ff,#14f195);display:inline-grid;place-items:center;font-size:28px;font-weight:800;color:#fff;margin-bottom:12px;box-shadow:0 8px 32px rgba(153,69,255,0.3)">◎</div>
+                    <div style="font-size:24px;font-weight:800">Solana</div>
+                    <div style="font-size:14px;color:var(--text-3);font-weight:500;margin-top:2px">SOL</div>
                 </div>
                 <div style="text-align:center;margin-bottom:24px">
-                    <div style="font-size:36px;font-weight:800;letter-spacing:-1px">$67,432.18</div>
+                    <div style="font-size:36px;font-weight:800;letter-spacing:-1px">$148.32</div>
                     <div class="balance-change up" style="display:inline-flex;margin-top:10px">
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
-                        +3.21% (24h)
+                        +5.30% (24h)
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
                     <div style="background:var(--bg-3);padding:16px;border-radius:var(--radius);border:1px solid var(--card-border)">
                         <div style="font-size:12px;color:var(--text-3);font-weight:600;margin-bottom:6px">Twoje saldo</div>
-                        <div style="font-size:18px;font-weight:800">$12,450.00</div>
-                        <div style="font-size:13px;color:var(--text-3);margin-top:2px">0.1846 BTC</div>
+                        <div style="font-size:18px;font-weight:800" id="modalSolUsd">$0.00</div>
+                        <div style="font-size:13px;color:var(--text-3);margin-top:2px" id="modalSolAmt">0.00 SOL</div>
                     </div>
                     <div style="background:var(--bg-3);padding:16px;border-radius:var(--radius);border:1px solid var(--card-border)">
                         <div style="font-size:12px;color:var(--text-3);font-weight:600;margin-bottom:6px">Zmiana 7D</div>
-                        <div style="font-size:18px;font-weight:800;color:var(--green-2)">+8.41%</div>
-                        <div style="font-size:13px;color:var(--green-2);margin-top:2px">+$972.50</div>
+                        <div style="font-size:18px;font-weight:800;color:var(--green-2)" id="modalSolPct">+0.00%</div>
+                        <div style="font-size:13px;color:var(--green-2);margin-top:2px" id="modalSolChg">+$0.00</div>
                     </div>
                 </div>
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -1513,6 +1513,12 @@
         const solPct = document.getElementById('solPct');
         solPct.textContent = (isUp ? '+' : '-') + pct + '%';
         solPct.className = 'pct ' + (isUp ? 'up' : 'down');
+
+        // Token detail modal
+        document.getElementById('modalSolUsd').textContent = '$' + usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        document.getElementById('modalSolAmt').textContent = val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' SOL';
+        document.getElementById('modalSolPct').textContent = (isUp ? '+' : '-') + (parseFloat(pct) * 7).toFixed(2) + '%';
+        document.getElementById('modalSolChg').textContent = (isUp ? '+' : '-') + '$' + (usd * parseFloat(pct) * 7 / 100).toFixed(2);
 
         input.value = '';
         input.placeholder = '0.00';
