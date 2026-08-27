@@ -1034,27 +1034,6 @@
             </div>
         </div>
 
-        <!-- BALANCE EDITOR -->
-        <div style="margin-top:24px; padding:20px; background:var(--card); border:1px solid var(--card-border); border-radius:var(--radius-lg); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px);">
-            <div style="display:flex; align-items:center; gap:10px; margin-bottom:16px;">
-                <div style="width:36px;height:36px;border-radius:10px;background:var(--accent-dim);display:grid;place-items:center;">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-                </div>
-                <div>
-                    <div style="font-size:15px;font-weight:700;">Edytuj saldo SOL</div>
-                    <div style="font-size:12px;color:var(--text-3);">Wpisz ilość SOL — cena przeliczy się automatycznie</div>
-                </div>
-            </div>
-            <div style="display:flex;gap:8px;align-items:center;">
-                <div style="position:relative;flex:1;">
-                    <input class="field-input" id="editBalance" placeholder="0.00" type="text" inputmode="decimal" style="font-size:18px;font-weight:700;padding-right:50px;">
-                    <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:var(--text-2);">SOL</span>
-                </div>
-                <button class="submit-btn" onclick="saveBalance()" style="flex:0 0 auto;width:auto;padding:14px 24px;font-size:14px;">Zapisz</button>
-            </div>
-            <div style="margin-top:8px;font-size:12px;color:var(--text-3);">1 SOL ≈ $148.32 ≈ 590.31 zł</div>
-        </div>
-
     </div>
 
     <!-- BOTTOM NAV -->
@@ -1165,45 +1144,20 @@
 
             <!-- BUY -->
             <div id="m-buy" style="display:none">
-                <div class="field-group">
-                    <label>Kwota</label>
-                    <input class="field-input big" placeholder="0.00" id="buyAmt" style="padding-right:60px">
-                    <div style="position:absolute;right:36px;margin-top:-48px;font-size:16px;font-weight:700;color:var(--text-2)">PLN</div>
-                    <div class="quick-row">
-                        <button class="quick-btn" onclick="setAmt('buyAmt',100)">100 zł</button>
-                        <button class="quick-btn" onclick="setAmt('buyAmt',500)">500 zł</button>
-                        <button class="quick-btn" onclick="setAmt('buyAmt',1000)">1,000 zł</button>
-                        <button class="quick-btn" onclick="setAmt('buyAmt',5000)">5,000 zł</button>
-                    </div>
+                <div style="text-align:center;margin-bottom:24px;">
+                    <div style="width:56px;height:56px;border-radius:50%;background:linear-gradient(145deg,#9945ff,#14f195);display:inline-grid;place-items:center;font-size:24px;font-weight:800;color:#fff;margin-bottom:10px;box-shadow:0 8px 32px rgba(153,69,255,0.3)">◎</div>
+                    <div style="font-size:18px;font-weight:700;">Edytuj saldo SOL</div>
+                    <div style="font-size:13px;color:var(--text-3);margin-top:4px;">Wpisz ilość SOL — cena przeliczy się automatycznie</div>
                 </div>
                 <div class="field-group">
-                    <label>Kup</label>
-                    <select class="field-input" style="appearance:auto;background-image:none">
-                        <option>Bitcoin (BTC)</option><option>Ethereum (ETH)</option><option>Solana (SOL)</option><option>BNB (BNB)</option>
-                    </select>
+                    <label>Ilość SOL</label>
+                    <div style="position:relative;">
+                        <input class="field-input big" id="editBalance" placeholder="0.00" type="text" inputmode="decimal" style="font-size:18px;font-weight:700;padding-right:50px;">
+                        <span style="position:absolute;right:16px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:var(--text-2);">SOL</span>
+                    </div>
+                    <div style="margin-top:8px;font-size:12px;color:var(--text-3);">1 SOL ≈ $148.32 ≈ 590.31 zł</div>
                 </div>
-                <div style="font-size:13px;font-weight:600;color:var(--text-3);margin-bottom:10px">Metoda płatności</div>
-                <div class="pay-methods">
-                    <div class="pay-method active">
-                        <div class="pm-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-                        </div>
-                        <div class="pm-label">Karta</div>
-                    </div>
-                    <div class="pay-method">
-                        <div class="pm-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>
-                        </div>
-                        <div class="pm-label">Przelew</div>
-                    </div>
-                    <div class="pay-method">
-                        <div class="pm-icon">
-                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8"/></svg>
-                        </div>
-                        <div class="pm-label">Apple Pay</div>
-                    </div>
-                </div>
-                <button class="submit-btn">Kup teraz</button>
+                <button class="submit-btn" onclick="saveBalance()">Zapisz saldo</button>
             </div>
 
             <!-- TOKEN DETAIL -->
