@@ -1,0 +1,1573 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>CVault — Wallet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        :root {
+            --bg: #06080d;
+            --bg-2: #0c1017;
+            --bg-3: #111720;
+            --bg-4: #181f2c;
+            --card: rgba(17, 23, 32, 0.75);
+            --card-solid: #111720;
+            --card-border: rgba(255,255,255,0.04);
+            --card-border-hover: rgba(255,255,255,0.08);
+            --accent: #3b82f6;
+            --accent-2: #60a5fa;
+            --accent-glow: rgba(59, 130, 246, 0.25);
+            --accent-dim: rgba(59,130,246,0.1);
+            --green: #22c55e;
+            --green-2: #4ade80;
+            --green-dim: rgba(34,197,94,0.12);
+            --red: #ef4444;
+            --red-2: #f87171;
+            --red-dim: rgba(239,68,68,0.12);
+            --orange: #f59e0b;
+            --orange-dim: rgba(245,158,11,0.12);
+            --purple: #a855f7;
+            --purple-dim: rgba(168,85,247,0.12);
+            --text-1: #f1f5f9;
+            --text-2: #94a3b8;
+            --text-3: #475569;
+            --text-4: #334155;
+            --radius: 16px;
+            --radius-lg: 22px;
+            --radius-xl: 28px;
+        }
+
+        html { font-size: 16px; }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text-1);
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Ambient background */
+        .ambient {
+            position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden;
+        }
+        .ambient .blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(140px);
+        }
+        .ambient .blob-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(59,130,246,0.12), transparent 70%);
+            top: -150px; right: -120px;
+            animation: drift 30s ease-in-out infinite;
+        }
+        .ambient .blob-2 {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(168,85,247,0.08), transparent 70%);
+            bottom: 100px; left: -150px;
+            animation: drift 25s ease-in-out infinite reverse;
+        }
+        .ambient .blob-3 {
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(34,197,94,0.06), transparent 70%);
+            top: 40%; right: -50px;
+            animation: drift 20s ease-in-out infinite 5s;
+        }
+        @keyframes drift {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(40px, -40px) scale(1.08); }
+            66% { transform: translate(-30px, 30px) scale(0.92); }
+        }
+
+        /* Noise overlay */
+        body::before {
+            content: '';
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+            background-repeat: repeat;
+            opacity: 0.5;
+        }
+
+        /* Layout */
+        .app {
+            position: relative; z-index: 1;
+            max-width: 430px;
+            margin: 0 auto;
+            min-height: 100vh;
+            padding: 0 20px 110px;
+        }
+
+        /* ─── HEADER ─── */
+        .header {
+            display: flex; align-items: center; justify-content: space-between;
+            padding: 24px 0 20px;
+        }
+
+        .brand {
+            display: flex; align-items: center; gap: 12px;
+        }
+
+        .brand svg.logo {
+            width: 38px; height: 38px;
+            filter: drop-shadow(0 0 16px var(--accent-glow));
+        }
+
+        .brand-text {
+            display: flex; flex-direction: column;
+        }
+
+        .brand-name {
+            font-size: 18px; font-weight: 800; letter-spacing: -0.5px;
+            background: linear-gradient(135deg, #f1f5f9, #94a3b8);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        .brand-sub {
+            font-size: 11px; font-weight: 500; color: var(--text-3);
+            letter-spacing: 2px; text-transform: uppercase; margin-top: -1px;
+        }
+
+        .header-actions {
+            display: flex; gap: 6px;
+        }
+
+        .h-btn {
+            width: 40px; height: 40px; border-radius: 14px;
+            background: var(--bg-3); border: 1px solid var(--card-border);
+            display: grid; place-items: center;
+            color: var(--text-2); font-size: 17px;
+            cursor: pointer; transition: all .2s; position: relative;
+        }
+
+        .h-btn:hover { background: var(--bg-4); color: var(--text-1); border-color: var(--card-border-hover); }
+
+        .h-btn .dot {
+            position: absolute; top: 8px; right: 8px;
+            width: 7px; height: 7px; background: var(--accent);
+            border-radius: 50%; border: 2px solid var(--bg);
+        }
+
+        /* ─── CHAIN BADGE ─── */
+        .chain-badge {
+            display: inline-flex; align-items: center; gap: 7px;
+            background: var(--bg-3); border: 1px solid var(--card-border);
+            border-radius: 100px; padding: 7px 14px 7px 10px;
+            font-size: 13px; font-weight: 500; color: var(--text-2);
+            cursor: pointer; transition: all .2s; margin-bottom: 22px;
+        }
+
+        .chain-badge:hover { border-color: var(--accent); color: var(--text-1); }
+
+        .chain-badge .chain-dot {
+            width: 10px; height: 10px; border-radius: 50%;
+            background: var(--accent); box-shadow: 0 0 10px var(--accent-glow);
+        }
+
+        .chain-badge .chevron { font-size: 10px; color: var(--text-3); margin-left: 2px; }
+
+        /* ─── BALANCE ─── */
+        .balance-section {
+            text-align: center; margin-bottom: 28px;
+        }
+
+        .balance-label {
+            font-size: 12px; font-weight: 600; color: var(--text-3);
+            text-transform: uppercase; letter-spacing: 2px; margin-bottom: 10px;
+        }
+
+        .balance-row {
+            display: flex; align-items: center; justify-content: center; gap: 12px;
+        }
+
+        .balance-amount {
+            font-size: 44px; font-weight: 800; letter-spacing: -2px;
+            line-height: 1;
+        }
+
+        .balance-amount .currency { font-size: 32px; font-weight: 600; color: var(--text-2); vertical-align: top; margin-right: 2px; }
+
+        .eye-toggle {
+            width: 32px; height: 32px; border-radius: 10px;
+            background: var(--bg-3); border: none; color: var(--text-3);
+            cursor: pointer; display: grid; place-items: center; font-size: 14px;
+            transition: all .2s;
+        }
+
+        .eye-toggle:hover { color: var(--text-1); background: var(--bg-4); }
+
+        .balance-change {
+            display: inline-flex; align-items: center; gap: 5px;
+            font-size: 14px; font-weight: 700; margin-top: 12px;
+            padding: 6px 14px; border-radius: 100px;
+        }
+
+        .balance-change.up { color: var(--green-2); background: var(--green-dim); }
+        .balance-change.down { color: var(--red-2); background: var(--red-dim); }
+
+        /* ─── ACTION GRID ─── */
+        .actions {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px;
+            margin-bottom: 32px;
+        }
+
+        .action-card {
+            display: flex; flex-direction: column; align-items: center; gap: 10px;
+            padding: 18px 6px 14px; border-radius: var(--radius);
+            background: var(--card); border: 1px solid var(--card-border);
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            cursor: pointer; transition: all .25s; text-decoration: none;
+        }
+
+        .action-card:hover {
+            background: var(--bg-4); border-color: var(--card-border-hover);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 32px rgba(0,0,0,0.35);
+        }
+
+        .action-card:active { transform: translateY(0); }
+
+        .action-icon {
+            width: 46px; height: 46px; border-radius: 15px;
+            display: grid; place-items: center; font-size: 20px;
+            transition: transform .2s;
+        }
+
+        .action-card:hover .action-icon { transform: scale(1.08); }
+
+        .action-icon.send { background: var(--accent-dim); color: var(--accent-2); }
+        .action-icon.receive { background: var(--green-dim); color: var(--green-2); }
+        .action-icon.swap { background: var(--purple-dim); color: var(--purple); }
+        .action-icon.buy { background: var(--orange-dim); color: var(--orange); }
+
+        .action-label {
+            font-size: 12px; font-weight: 600; color: var(--text-2);
+        }
+
+        /* ─── ASSETS TABS ─── */
+        .tab-bar {
+            display: flex; gap: 4px;
+            background: var(--bg-3); border-radius: var(--radius);
+            padding: 4px; margin-bottom: 20px; border: 1px solid var(--card-border);
+        }
+
+        .tab-btn {
+            flex: 1; padding: 10px; border-radius: 13px;
+            font-size: 13px; font-weight: 700; color: var(--text-3);
+            background: transparent; border: none; cursor: pointer;
+            transition: all .25s; font-family: inherit;
+        }
+
+        .tab-btn.active {
+            background: var(--accent); color: #fff;
+            box-shadow: 0 4px 16px var(--accent-glow);
+        }
+
+        .tab-btn:hover:not(.active) { color: var(--text-2); }
+
+        .tab-panel { display: none; }
+        .tab-panel.active { display: block; animation: fadeUp .3s ease; }
+
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(8px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* ─── TOKEN LIST ─── */
+        .token-list { display: flex; flex-direction: column; gap: 2px; }
+
+        .token-row {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 6px; border-radius: var(--radius);
+            cursor: pointer; transition: all .2s;
+        }
+
+        .token-row:hover { background: rgba(255,255,255,0.02); }
+
+        .token-logo {
+            width: 44px; height: 44px; border-radius: 50%;
+            display: grid; place-items: center; font-size: 18px;
+            font-weight: 800; color: #fff; flex-shrink: 0;
+            position: relative;
+        }
+
+        .token-logo.btc { background: linear-gradient(145deg, #f7931a, #e8850e); }
+        .token-logo.eth { background: linear-gradient(145deg, #627eea, #4558c2); }
+        .token-logo.sol { background: linear-gradient(145deg, #9945ff, #14f195); }
+        .token-logo.bnb { background: linear-gradient(145deg, #f3ba2f, #d49e15); }
+        .token-logo.ada { background: linear-gradient(145deg, #0033ad, #001d70); }
+        .token-logo.dot { background: linear-gradient(145deg, #e6007a, #b8005f); }
+        .token-logo.xrp { background: linear-gradient(145deg, #23292f, #3d454e); }
+        .token-logo.usdt { background: linear-gradient(145deg, #26a17b, #1a8c6b); }
+
+        .token-name-col {
+            flex: 1; min-width: 0;
+        }
+
+        .token-title {
+            font-size: 15px; font-weight: 700; margin-bottom: 2px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+
+        .token-sub {
+            font-size: 13px; color: var(--text-3); font-weight: 500;
+        }
+
+        .token-val-col { text-align: right; flex-shrink: 0; }
+
+        .token-usd {
+            font-size: 15px; font-weight: 700; margin-bottom: 2px;
+        }
+
+        .token-crypto {
+            font-size: 13px; color: var(--text-3); font-weight: 500;
+            margin-bottom: 3px;
+        }
+
+        .pct {
+            display: inline-block;
+            font-size: 12px; font-weight: 700; padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .pct.up { color: var(--green-2); background: var(--green-dim); }
+        .pct.down { color: var(--red-2); background: var(--red-dim); }
+
+        /* ─── MINI CHART CARD ─── */
+        .chart-card {
+            background: var(--card); border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg); padding: 20px;
+            margin-bottom: 24px; backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+
+        .chart-top {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 16px;
+        }
+
+        .chart-pair {
+            display: flex; align-items: center; gap: 10px;
+        }
+
+        .chart-pair-icon {
+            width: 32px; height: 32px; border-radius: 50%;
+            background: linear-gradient(145deg, #f7931a, #e8850e);
+            display: grid; place-items: center; font-size: 14px;
+            font-weight: 800; color: #fff;
+        }
+
+        .chart-pair-name { font-size: 16px; font-weight: 700; }
+        .chart-pair-sub { font-size: 12px; color: var(--text-3); font-weight: 500; }
+
+        .chart-price-col { text-align: right; }
+        .chart-price { font-size: 18px; font-weight: 800; }
+        .chart-price-change { font-size: 13px; font-weight: 700; color: var(--green-2); }
+
+        .chart-canvas {
+            width: 100%; height: 120px; margin-bottom: 14px;
+            border-radius: 10px; overflow: hidden;
+        }
+
+        .chart-canvas svg { width: 100%; height: 100%; }
+
+        .time-row {
+            display: flex; gap: 4px;
+        }
+
+        .time-btn {
+            flex: 1; padding: 8px; border-radius: 10px;
+            font-size: 12px; font-weight: 700; color: var(--text-3);
+            background: transparent; border: 1px solid transparent;
+            cursor: pointer; transition: all .2s; font-family: inherit;
+            text-align: center;
+        }
+
+        .time-btn.active {
+            color: var(--accent-2); background: var(--accent-dim);
+            border-color: rgba(59,130,246,0.15);
+        }
+
+        .time-btn:hover:not(.active) { color: var(--text-2); }
+
+        /* ─── NFT GRID ─── */
+        .nft-grid {
+            display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;
+        }
+
+        .nft-card {
+            background: var(--card); border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg); overflow: hidden;
+            cursor: pointer; transition: all .3s;
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+        }
+
+        .nft-card:hover {
+            transform: translateY(-5px); border-color: var(--accent);
+            box-shadow: 0 16px 40px rgba(0,0,0,0.5);
+        }
+
+        .nft-thumb {
+            width: 100%; aspect-ratio: 1; position: relative; overflow: hidden;
+        }
+
+        .nft-thumb .nft-bg {
+            width: 100%; height: 100%; object-fit: cover;
+        }
+
+        .nft-thumb canvas {
+            width: 100%; height: 100%; display: block;
+        }
+
+        .nft-body { padding: 14px; }
+
+        .nft-col-name {
+            font-size: 11px; font-weight: 700; color: var(--accent-2);
+            text-transform: uppercase; letter-spacing: 0.5px;
+            margin-bottom: 4px;
+        }
+
+        .nft-title { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
+
+        .nft-bottom {
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .nft-price-label { font-size: 10px; color: var(--text-3); font-weight: 500; }
+
+        .nft-price-val {
+            font-size: 13px; font-weight: 700; display: flex; align-items: center; gap: 4px;
+        }
+
+        .nft-price-val .eth-icon {
+            width: 12px; height: 12px; border-radius: 50%;
+            background: linear-gradient(145deg, #627eea, #4558c2);
+            display: inline-block;
+        }
+
+        /* ─── ACTIVITY ─── */
+        .act-list { display: flex; flex-direction: column; gap: 2px; }
+
+        .act-row {
+            display: flex; align-items: center; gap: 14px;
+            padding: 14px 6px; border-radius: var(--radius);
+            transition: background .2s; cursor: pointer;
+        }
+
+        .act-row:hover { background: rgba(255,255,255,0.02); }
+
+        .act-icon {
+            width: 42px; height: 42px; border-radius: 14px;
+            display: grid; place-items: center; font-size: 18px;
+            flex-shrink: 0;
+        }
+
+        .act-icon.send { background: var(--red-dim); }
+        .act-icon.receive { background: var(--green-dim); }
+        .act-icon.swap { background: var(--purple-dim); }
+        .act-icon.buy { background: var(--orange-dim); }
+        .act-icon.approve { background: var(--accent-dim); }
+
+        .act-info { flex: 1; min-width: 0; }
+
+        .act-title { font-size: 14px; font-weight: 600; margin-bottom: 2px; }
+
+        .act-hash {
+            font-size: 12px; color: var(--text-3); font-weight: 500;
+            font-family: 'SF Mono', 'Cascadia Code', monospace;
+        }
+
+        .act-right { text-align: right; flex-shrink: 0; }
+
+        .act-val { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+        .act-usd { font-size: 12px; color: var(--text-3); font-weight: 500; }
+
+        /* ─── BOTTOM NAV ─── */
+        .bottom-bar {
+            position: fixed; bottom: 0; left: 50%; transform: translateX(-50%);
+            width: 100%; max-width: 430px;
+            background: rgba(6, 8, 13, 0.88);
+            backdrop-filter: blur(30px) saturate(1.5);
+            -webkit-backdrop-filter: blur(30px) saturate(1.5);
+            border-top: 1px solid var(--card-border);
+            padding: 6px 12px;
+            padding-bottom: max(6px, env(safe-area-inset-bottom));
+            z-index: 100;
+        }
+
+        .bottom-inner {
+            display: flex; justify-content: space-around;
+        }
+
+        .b-nav {
+            display: flex; flex-direction: column; align-items: center;
+            gap: 4px; padding: 8px 16px; border-radius: 14px;
+            cursor: pointer; transition: all .2s; text-decoration: none;
+        }
+
+        .b-nav.active { color: var(--accent-2); }
+        .b-nav:not(.active) { color: var(--text-3); }
+        .b-nav:hover:not(.active) { color: var(--text-2); }
+
+        .b-nav .b-icon { font-size: 22px; transition: transform .2s; }
+        .b-nav.active .b-icon { transform: scale(1.1); }
+
+        .b-nav .b-label { font-size: 10px; font-weight: 700; letter-spacing: 0.3px; }
+
+        /* ─── MODAL ─── */
+        .modal-bg {
+            display: none; position: fixed; inset: 0; z-index: 500;
+            background: rgba(0,0,0,0.6);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            align-items: flex-end; justify-content: center;
+        }
+
+        .modal-bg.open { display: flex; }
+
+        .modal {
+            width: 100%; max-width: 430px;
+            background: var(--bg-2);
+            border-radius: 28px 28px 0 0;
+            padding: 12px 24px 44px;
+            animation: sheetUp .35s cubic-bezier(.16,1,.3,1);
+            border: 1px solid var(--card-border);
+            border-bottom: none;
+            max-height: 85vh; overflow-y: auto;
+        }
+
+        @keyframes sheetUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal .handle {
+            width: 40px; height: 4px; background: var(--text-4);
+            border-radius: 4px; margin: 0 auto 20px;
+        }
+
+        .modal h2 {
+            font-size: 20px; font-weight: 800; text-align: center; margin-bottom: 24px;
+        }
+
+        .field-group { margin-bottom: 16px; }
+
+        .field-group label {
+            display: block; font-size: 13px; font-weight: 600;
+            color: var(--text-3); margin-bottom: 8px;
+        }
+
+        .field-input {
+            width: 100%; padding: 14px 16px; border-radius: 14px;
+            background: var(--bg-3); border: 1px solid var(--card-border);
+            color: var(--text-1); font-size: 15px; font-weight: 500;
+            font-family: inherit; outline: none; transition: border-color .2s;
+        }
+
+        .field-input:focus { border-color: var(--accent); }
+
+        .field-input.big {
+            font-size: 34px; font-weight: 800; text-align: center;
+            padding: 20px; letter-spacing: -1px;
+        }
+
+        .field-input::placeholder { color: var(--text-4); }
+
+        .quick-row {
+            display: flex; gap: 6px; margin-top: 10px;
+        }
+
+        .quick-btn {
+            flex: 1; padding: 8px; border-radius: 10px;
+            background: var(--bg-3); border: 1px solid var(--card-border);
+            color: var(--text-2); font-size: 13px; font-weight: 700;
+            cursor: pointer; transition: all .2s; font-family: inherit;
+            text-align: center;
+        }
+
+        .quick-btn:hover { border-color: var(--accent); color: var(--text-1); }
+
+        .submit-btn {
+            width: 100%; padding: 16px; border-radius: 14px; border: none;
+            font-size: 16px; font-weight: 800; font-family: inherit;
+            cursor: pointer; transition: all .25s; margin-top: 12px;
+            background: linear-gradient(135deg, #3b82f6, #2563eb);
+            color: #fff;
+            box-shadow: 0 4px 24px var(--accent-glow);
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px var(--accent-glow);
+        }
+
+        .submit-btn:active { transform: translateY(0); }
+
+        .submit-btn.ghost {
+            background: var(--bg-3); color: var(--text-2);
+            box-shadow: none; border: 1px solid var(--card-border);
+        }
+
+        .submit-btn.ghost:hover { color: var(--text-1); }
+
+        /* QR */
+        .qr-wrap {
+            width: 200px; height: 200px; margin: 0 auto 20px;
+            background: #fff; border-radius: 18px;
+            display: grid; place-items: center;
+            box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+        }
+
+        .wallet-addr {
+            font-size: 13px; font-weight: 600;
+            background: var(--bg-3); padding: 12px 16px;
+            border-radius: 12px; border: 1px solid var(--card-border);
+            word-break: break-all; text-align: center;
+            color: var(--text-2); line-height: 1.5;
+        }
+
+        .wallet-addr .highlight { color: var(--text-1); }
+
+        /* PAYMENT METHODS */
+        .pay-methods {
+            display: flex; gap: 8px; margin-bottom: 16px;
+        }
+
+        .pay-method {
+            flex: 1; padding: 14px 8px; border-radius: 14px;
+            background: var(--bg-3); border: 1px solid var(--card-border);
+            text-align: center; cursor: pointer; transition: all .2s;
+        }
+
+        .pay-method.active { border-color: var(--accent); }
+        .pay-method:hover:not(.active) { border-color: var(--card-border-hover); }
+
+        .pay-method .pm-icon { font-size: 22px; margin-bottom: 6px; }
+        .pay-method .pm-label { font-size: 12px; font-weight: 600; color: var(--text-2); }
+        .pay-method.active .pm-label { color: var(--text-1); }
+
+        .hint { font-size: 13px; color: var(--text-3); margin-bottom: 12px; font-weight: 500; }
+
+        /* ─── HIDDEN ─── */
+        ::-webkit-scrollbar { width: 0; }
+        .blurred { filter: blur(8px); pointer-events: none; user-select: none; }
+
+        @media (max-width: 430px) {
+            .app { padding: 0 16px 110px; }
+            .balance-amount { font-size: 38px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="ambient">
+        <div class="blob blob-1"></div>
+        <div class="blob blob-2"></div>
+        <div class="blob blob-3"></div>
+    </div>
+
+    <div class="app" id="app">
+
+        <!-- HEADER -->
+        <header class="header">
+            <div class="brand">
+                <!-- Custom SVG Logo -->
+                <svg class="logo" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <defs>
+                        <linearGradient id="lg1" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#3b82f6"/>
+                            <stop offset="100%" stop-color="#8b5cf6"/>
+                        </linearGradient>
+                        <linearGradient id="lg2" x1="0" y1="40" x2="40" y2="0" gradientUnits="userSpaceOnUse">
+                            <stop offset="0%" stop-color="#60a5fa"/>
+                            <stop offset="100%" stop-color="#a78bfa"/>
+                        </linearGradient>
+                    </defs>
+                    <rect width="40" height="40" rx="12" fill="url(#lg1)"/>
+                    <path d="M12 14.5C12 13.12 13.12 12 14.5 12h3c1.38 0 2.5 1.12 2.5 2.5v1c0 .83-.4 1.57-1.02 2.03L17 18.43V25.5c0 1.38-1.12 2.5-2.5 2.5h-3C10.12 28 9 26.88 9 25.5v-11z" fill="rgba(255,255,255,0.25)"/>
+                    <path d="M28 14.5C28 13.12 26.88 12 25.5 12h-3c-1.38 0-2.5 1.12-2.5 2.5v1c0 .83.4 1.57 1.02 2.03L23 18.43V25.5c0 1.38 1.12 2.5 2.5 2.5h3c1.38 0 2.5-1.12 2.5-2.5v-11z" fill="rgba(255,255,255,0.45)"/>
+                    <circle cx="20" cy="20" r="4" fill="url(#lg2)" stroke="#fff" stroke-width="1.5" opacity="0.9"/>
+                    <path d="M18.5 20h3M20 18.5v3" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity="0.7"/>
+                </svg>
+                <div class="brand-text">
+                    <span class="brand-name">CVault</span>
+                    <span class="brand-sub">Wallet</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <div class="h-btn" title="Powiadomienia">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+                    <div class="dot"></div>
+                </div>
+                <div class="h-btn" title="Skaner QR">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+                </div>
+            </div>
+        </header>
+
+        <!-- CHAIN -->
+        <div class="chain-badge" onclick="toggleNetwork()">
+            <div class="chain-dot"></div>
+            <span id="chainName">Ethereum</span>
+            <span class="chevron">▾</span>
+        </div>
+
+        <!-- BALANCE -->
+        <div class="balance-section">
+            <div class="balance-label">Saldo portfela</div>
+            <div class="balance-row">
+                <div class="balance-amount" id="balance">
+                    <span class="currency">$</span><span id="balanceNum">0</span>
+                </div>
+                <button class="eye-toggle" onclick="toggleEye()" title="Pokaż/ukryj">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="eyeIcon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+            </div>
+            <div class="balance-change up" id="balChange">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+                +$1,247.32 (5.29%) dzisiaj
+            </div>
+        </div>
+
+        <!-- ACTIONS -->
+        <div class="actions">
+            <div class="action-card" onclick="openModal('send')">
+                <div class="action-icon send">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                </div>
+                <span class="action-label">Wyślij</span>
+            </div>
+            <div class="action-card" onclick="openModal('receive')">
+                <div class="action-icon receive">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                </div>
+                <span class="action-label">Odbierz</span>
+            </div>
+            <div class="action-card" onclick="openModal('swap')">
+                <div class="action-icon swap">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                </div>
+                <span class="action-label">Zamień</span>
+            </div>
+            <div class="action-card" onclick="openModal('buy')">
+                <div class="action-icon buy">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                </div>
+                <span class="action-label">Kup</span>
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab('tokens',this)">Aktywa</button>
+            <button class="tab-btn" onclick="switchTab('nfts',this)">NFT</button>
+            <button class="tab-btn" onclick="switchTab('history',this)">Historia</button>
+        </div>
+
+        <!-- TOKENS -->
+        <div class="tab-panel active" id="panel-tokens">
+            <div class="token-list">
+
+                <div class="token-row" onclick="openModal('tokenDetail')">
+                    <div class="token-logo btc">₿</div>
+                    <div class="token-name-col">
+                        <div class="token-title">Bitcoin</div>
+                        <div class="token-sub">BTC</div>
+                    </div>
+                    <div class="token-val-col">
+                        <div class="token-usd">$12,450.00</div>
+                        <div class="token-crypto">0.1846 BTC</div>
+                        <span class="pct up">+3.21%</span>
+                    </div>
+                </div>
+
+                <div class="token-row">
+                    <div class="token-logo eth">Ξ</div>
+                    <div class="token-name-col">
+                        <div class="token-title">Ethereum</div>
+                        <div class="token-sub">ETH</div>
+                    </div>
+                    <div class="token-val-col">
+                        <div class="token-usd">$8,234.72</div>
+                        <div class="token-crypto">3.124 ETH</div>
+                        <span class="pct up">+7.82%</span>
+                    </div>
+                </div>
+
+                <div class="token-row">
+                    <div class="token-logo sol">◎</div>
+                    <div class="token-name-col">
+                        <div class="token-title">Solana</div>
+                        <div class="token-sub">SOL</div>
+                    </div>
+                    <div class="token-val-col">
+                        <div class="token-usd">$2,891.20</div>
+                        <div class="token-crypto">18.50 SOL</div>
+                        <span class="pct up">+12.4%</span>
+                    </div>
+                </div>
+
+                <div class="token-row">
+                    <div class="token-logo bnb">B</div>
+                    <div class="token-name-col">
+                        <div class="token-title">BNB</div>
+                        <div class="token-sub">BNB</div>
+                    </div>
+                    <div class="token-val-col">
+                        <div class="token-usd">$1,125.55</div>
+                        <div class="token-crypto">3.50 BNB</div>
+                        <span class="pct down">-1.30%</span>
+                    </div>
+                </div>
+
+                <div class="token-row">
+                    <div class="token-logo usdt">₮</div>
+                    <div class="token-name-col">
+                        <div class="token-title">Tether</div>
+                        <div class="token-sub">USDT</div>
+                    </div>
+                    <div class="token-val-col">
+                        <div class="token-usd">$500.00</div>
+                        <div class="token-crypto">500.00 USDT</div>
+                        <span class="pct up">+0.01%</span>
+                    </div>
+                </div>
+
+                <div class="token-row">
+                    <div class="token-logo ada">₳</div>
+                    <div class="token-name-col">
+                        <div class="token-title">Cardano</div>
+                        <div class="token-sub">ADA</div>
+                    </div>
+                    <div class="token-val-col">
+                        <div class="token-usd">$680.00</div>
+                        <div class="token-crypto">1,200 ADA</div>
+                        <span class="pct up">+4.72%</span>
+                    </div>
+                </div>
+
+                <div class="token-row">
+                    <div class="token-logo dot">●</div>
+                    <div class="token-name-col">
+                        <div class="token-title">Polkadot</div>
+                        <div class="token-sub">DOT</div>
+                    </div>
+                    <div class="token-val-col">
+                        <div class="token-usd">$290.00</div>
+                        <div class="token-crypto">40.00 DOT</div>
+                        <span class="pct down">-2.10%</span>
+                    </div>
+                </div>
+
+                <div class="token-row">
+                    <div class="token-logo xrp">✕</div>
+                    <div class="token-name-col">
+                        <div class="token-title">XRP</div>
+                        <div class="token-sub">XRP</div>
+                    </div>
+                    <div class="token-val-col">
+                        <div class="token-usd">$160.00</div>
+                        <div class="token-crypto">320 XRP</div>
+                        <span class="pct up">+1.83%</span>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- NFTs -->
+        <div class="tab-panel" id="panel-nfts">
+            <div class="nft-grid">
+                <div class="nft-card">
+                    <div class="nft-thumb"><canvas id="nft1" width="200" height="200"></canvas></div>
+                    <div class="nft-body">
+                        <div class="nft-col-name">CryptoPunks</div>
+                        <div class="nft-title">Punk #7804</div>
+                        <div class="nft-bottom">
+                            <div><div class="nft-price-label">Cena</div></div>
+                            <div class="nft-price-val"><span class="eth-icon"></span>48.5 ETH</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="nft-card">
+                    <div class="nft-thumb"><canvas id="nft2" width="200" height="200"></canvas></div>
+                    <div class="nft-body">
+                        <div class="nft-col-name">BAYC</div>
+                        <div class="nft-title">Ape #3749</div>
+                        <div class="nft-bottom">
+                            <div><div class="nft-price-label">Cena</div></div>
+                            <div class="nft-price-val"><span class="eth-icon"></span>25.0 ETH</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="nft-card">
+                    <div class="nft-thumb"><canvas id="nft3" width="200" height="200"></canvas></div>
+                    <div class="nft-body">
+                        <div class="nft-col-name">Doodles</div>
+                        <div class="nft-title">Doodle #6914</div>
+                        <div class="nft-bottom">
+                            <div><div class="nft-price-label">Cena</div></div>
+                            <div class="nft-price-val"><span class="eth-icon"></span>5.2 ETH</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="nft-card">
+                    <div class="nft-thumb"><canvas id="nft4" width="200" height="200"></canvas></div>
+                    <div class="nft-body">
+                        <div class="nft-col-name">Azuki</div>
+                        <div class="nft-title">Azuki #5624</div>
+                        <div class="nft-bottom">
+                            <div><div class="nft-price-label">Cena</div></div>
+                            <div class="nft-price-val"><span class="eth-icon"></span>8.7 ETH</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HISTORY -->
+        <div class="tab-panel" id="panel-history">
+            <div class="act-list">
+                <div class="act-row">
+                    <div class="act-icon receive">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                    </div>
+                    <div class="act-info">
+                        <div class="act-title">Odebrano ETH</div>
+                        <div class="act-hash">0x8a3f...e71b</div>
+                    </div>
+                    <div class="act-right">
+                        <div class="act-val" style="color:var(--green-2)">+0.5 ETH</div>
+                        <div class="act-usd">$1,321.50</div>
+                    </div>
+                </div>
+                <div class="act-row">
+                    <div class="act-icon swap">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a855f7" stroke-width="2.5" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                    </div>
+                    <div class="act-info">
+                        <div class="act-title">Zamiana ETH → SOL</div>
+                        <div class="act-hash">0x1bc4...92af</div>
+                    </div>
+                    <div class="act-right">
+                        <div class="act-val">0.2 ETH → 2.1 SOL</div>
+                        <div class="act-usd">$264.30</div>
+                    </div>
+                </div>
+                <div class="act-row">
+                    <div class="act-icon send">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></svg>
+                    </div>
+                    <div class="act-info">
+                        <div class="act-title">Wysłano BTC</div>
+                        <div class="act-hash">bc1q9...x4m2</div>
+                    </div>
+                    <div class="act-right">
+                        <div class="act-val" style="color:var(--red-2)">-0.02 BTC</div>
+                        <div class="act-usd">$1,348.64</div>
+                    </div>
+                </div>
+                <div class="act-row">
+                    <div class="act-icon buy">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2.5" stroke-linecap="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                    </div>
+                    <div class="act-info">
+                        <div class="act-title">Kupno SOL</div>
+                        <div class="act-hash">via Visa •• 4821</div>
+                    </div>
+                    <div class="act-right">
+                        <div class="act-val" style="color:var(--green-2)">+5.0 SOL</div>
+                        <div class="act-usd">$781.00</div>
+                    </div>
+                </div>
+                <div class="act-row">
+                    <div class="act-icon approve">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round"><polyline points="20 6 9 17 4 12"/></svg>
+                    </div>
+                    <div class="act-info">
+                        <div class="act-title">Zatwierdzono USDT</div>
+                        <div class="act-hash">0x5de7...c301</div>
+                    </div>
+                    <div class="act-right">
+                        <div class="act-val" style="color:var(--accent-2)">Unlimited</div>
+                        <div class="act-usd">Uniswap V3</div>
+                    </div>
+                </div>
+                <div class="act-row">
+                    <div class="act-icon receive">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#22c55e" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                    </div>
+                    <div class="act-info">
+                        <div class="act-title">Odebrano ADA</div>
+                        <div class="act-hash">addr1q...x9k2</div>
+                    </div>
+                    <div class="act-right">
+                        <div class="act-val" style="color:var(--green-2)">+200 ADA</div>
+                        <div class="act-usd">$113.33</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- BOTTOM NAV -->
+    <nav class="bottom-bar">
+        <div class="bottom-inner">
+            <div class="b-nav active" onclick="selectNav(this)">
+                <span class="b-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                </span>
+                <span class="b-label">Portfel</span>
+            </div>
+            <div class="b-nav" onclick="selectNav(this)">
+                <span class="b-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+                </span>
+                <span class="b-label">Rynek</span>
+            </div>
+            <div class="b-nav" onclick="selectNav(this)">
+                <span class="b-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+                </span>
+                <span class="b-label">Swap</span>
+            </div>
+            <div class="b-nav" onclick="selectNav(this)">
+                <span class="b-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                </span>
+                <span class="b-label">DApps</span>
+            </div>
+            <div class="b-nav" onclick="selectNav(this)">
+                <span class="b-icon">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                </span>
+                <span class="b-label">Profil</span>
+            </div>
+        </div>
+    </nav>
+
+    <!-- MODALS -->
+    <div class="modal-bg" id="modalBg" onclick="closeModal(event)">
+        <div class="modal" onclick="event.stopPropagation()">
+            <div class="handle"></div>
+            <h2 id="modalTitle">Wyślij</h2>
+
+            <!-- SEND -->
+            <div id="m-send" style="display:none">
+                <div class="field-group">
+                    <label>Adres odbiorcy</label>
+                    <input class="field-input" placeholder="0x... lub ENS name" type="text" spellcheck="false">
+                </div>
+                <div class="field-group">
+                    <label>Kwota</label>
+                    <input class="field-input big" placeholder="0.00" id="sendAmt">
+                    <div class="quick-row">
+                        <button class="quick-btn" onclick="setAmt('sendAmt',0.25)">25%</button>
+                        <button class="quick-btn" onclick="setAmt('sendAmt',0.5)">50%</button>
+                        <button class="quick-btn" onclick="setAmt('sendAmt',0.75)">75%</button>
+                        <button class="quick-btn" onclick="setAmt('sendAmt',1)">MAX</button>
+                    </div>
+                </div>
+                <div class="hint">Szacowana opłata sieciowa: ~$2.41</div>
+                <button class="submit-btn">Potwierdź wysłanie</button>
+            </div>
+
+            <!-- RECEIVE -->
+            <div id="m-receive" style="display:none">
+                <div class="qr-wrap" id="qrContainer"></div>
+                <div class="wallet-addr">
+                    <span class="highlight" id="walletAddr">0x742d35Cc6634C0532925a3b844Bc9e7595f2bD38</span>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:16px;">
+                    <button class="submit-btn" onclick="copyAddr()" style="flex:2">Kopiuj adres</button>
+                    <button class="submit-btn ghost" style="flex:1">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="vertical-align:middle;margin-right:4px"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+                        Udostępnij
+                    </button>
+                </div>
+            </div>
+
+            <!-- SWAP -->
+            <div id="m-swap" style="display:none">
+                <div class="field-group">
+                    <label>Zamień z</label>
+                    <div style="display:flex;gap:8px">
+                        <input class="field-input" placeholder="0.00" style="flex:1">
+                        <select class="field-input" style="width:110px;appearance:auto;background-image:none">
+                            <option>ETH</option><option>BTC</option><option>SOL</option><option>BNB</option>
+                        </select>
+                    </div>
+                </div>
+                <div style="text-align:center;padding:6px 0">
+                    <div style="width:38px;height:38px;border-radius:50%;background:var(--bg-3);border:1px solid var(--card-border);display:inline-grid;place-items:center;cursor:pointer;transition:all .2s;color:var(--text-2)">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><polyline points="19 12 12 19 5 12"/></svg>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label>Zamień na</label>
+                    <div style="display:flex;gap:8px">
+                        <input class="field-input" placeholder="0.00" style="flex:1">
+                        <select class="field-input" style="width:110px;appearance:auto;background-image:none">
+                            <option>USDT</option><option>ETH</option><option>BTC</option><option>SOL</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="hint">1 ETH = 3,254.12 USDT · Slippage: 0.5%</div>
+                <button class="submit-btn">Zamień teraz</button>
+            </div>
+
+            <!-- BUY -->
+            <div id="m-buy" style="display:none">
+                <div class="field-group">
+                    <label>Kwota</label>
+                    <input class="field-input big" placeholder="0.00" id="buyAmt" style="padding-right:60px">
+                    <div style="position:absolute;right:36px;margin-top:-48px;font-size:16px;font-weight:700;color:var(--text-2)">PLN</div>
+                    <div class="quick-row">
+                        <button class="quick-btn" onclick="setAmt('buyAmt',100)">100 zł</button>
+                        <button class="quick-btn" onclick="setAmt('buyAmt',500)">500 zł</button>
+                        <button class="quick-btn" onclick="setAmt('buyAmt',1000)">1,000 zł</button>
+                        <button class="quick-btn" onclick="setAmt('buyAmt',5000)">5,000 zł</button>
+                    </div>
+                </div>
+                <div class="field-group">
+                    <label>Kup</label>
+                    <select class="field-input" style="appearance:auto;background-image:none">
+                        <option>Bitcoin (BTC)</option><option>Ethereum (ETH)</option><option>Solana (SOL)</option><option>BNB (BNB)</option>
+                    </select>
+                </div>
+                <div style="font-size:13px;font-weight:600;color:var(--text-3);margin-bottom:10px">Metoda płatności</div>
+                <div class="pay-methods">
+                    <div class="pay-method active">
+                        <div class="pm-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                        </div>
+                        <div class="pm-label">Karta</div>
+                    </div>
+                    <div class="pay-method">
+                        <div class="pm-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 15h0M2 9.5h20"/></svg>
+                        </div>
+                        <div class="pm-label">Przelew</div>
+                    </div>
+                    <div class="pay-method">
+                        <div class="pm-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 12h8"/></svg>
+                        </div>
+                        <div class="pm-label">Apple Pay</div>
+                    </div>
+                </div>
+                <button class="submit-btn">Kup teraz</button>
+            </div>
+
+            <!-- TOKEN DETAIL -->
+            <div id="m-tokenDetail" style="display:none">
+                <div style="text-align:center;margin-bottom:24px">
+                    <div style="width:64px;height:64px;border-radius:50%;background:linear-gradient(145deg,#f7931a,#e8850e);display:inline-grid;place-items:center;font-size:28px;font-weight:800;color:#fff;margin-bottom:12px;box-shadow:0 8px 32px rgba(247,147,26,0.3)">₿</div>
+                    <div style="font-size:24px;font-weight:800">Bitcoin</div>
+                    <div style="font-size:14px;color:var(--text-3);font-weight:500;margin-top:2px">BTC</div>
+                </div>
+                <div style="text-align:center;margin-bottom:24px">
+                    <div style="font-size:36px;font-weight:800;letter-spacing:-1px">$67,432.18</div>
+                    <div class="balance-change up" style="display:inline-flex;margin-top:10px">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
+                        +3.21% (24h)
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:20px">
+                    <div style="background:var(--bg-3);padding:16px;border-radius:var(--radius);border:1px solid var(--card-border)">
+                        <div style="font-size:12px;color:var(--text-3);font-weight:600;margin-bottom:6px">Twoje saldo</div>
+                        <div style="font-size:18px;font-weight:800">$12,450.00</div>
+                        <div style="font-size:13px;color:var(--text-3);margin-top:2px">0.1846 BTC</div>
+                    </div>
+                    <div style="background:var(--bg-3);padding:16px;border-radius:var(--radius);border:1px solid var(--card-border)">
+                        <div style="font-size:12px;color:var(--text-3);font-weight:600;margin-bottom:6px">Zmiana 7D</div>
+                        <div style="font-size:18px;font-weight:800;color:var(--green-2)">+8.41%</div>
+                        <div style="font-size:13px;color:var(--green-2);margin-top:2px">+$972.50</div>
+                    </div>
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+                    <button class="submit-btn" onclick="openModal('send')">Wyślij</button>
+                    <button class="submit-btn ghost" onclick="openModal('receive')">Odbierz</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    // ─── TAB SWITCHING ───
+    function switchTab(name, el) {
+        document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById('panel-' + name).classList.add('active');
+        el.classList.add('active');
+    }
+
+    // ─── MODAL ───
+    function openModal(type) {
+        const bg = document.getElementById('modalBg');
+        const title = document.getElementById('modalTitle');
+        const ids = ['send','receive','swap','buy','tokenDetail'];
+        ids.forEach(id => {
+            const el = document.getElementById('m-' + id);
+            if (el) el.style.display = 'none';
+        });
+        const labels = { send: 'Wyślij', receive: 'Odbierz portfel', swap: 'Zamień aktywa', buy: 'Kup kryptowalutę', tokenDetail: 'Szczegóły tokena' };
+        title.textContent = labels[type] || '';
+        const content = document.getElementById('m-' + type);
+        if (content) content.style.display = 'block';
+        bg.classList.add('open');
+
+        if (type === 'receive') drawQR();
+    }
+
+    function closeModal(e) {
+        if (e.target === e.currentTarget) {
+            document.getElementById('modalBg').classList.remove('open');
+        }
+    }
+
+    // ─── UTILS ───
+    function setAmt(id, v) { document.getElementById(id).value = v; }
+
+    function copyAddr() {
+        navigator.clipboard.writeText(document.getElementById('walletAddr').textContent).then(() => {
+            const btn = event.target.closest('button');
+            btn.textContent = '✓ Skopiowano';
+            setTimeout(() => btn.textContent = 'Kopiuj adres', 2000);
+        });
+    }
+
+    // ─── NETWORK TOGGLE ───
+    const networks = ['Ethereum','Polygon','BNB Chain','Arbitrum','Optimism','Avalanche','Solana'];
+    let netIdx = 0;
+    function toggleNetwork() {
+        netIdx = (netIdx + 1) % networks.length;
+        document.getElementById('chainName').textContent = networks[netIdx];
+    }
+
+    // ─── EYE TOGGLE ───
+    let hidden = false;
+    function toggleEye() {
+        hidden = !hidden;
+        document.getElementById('balanceNum').style.filter = hidden ? 'blur(10px)' : '';
+        document.getElementById('balChange').style.filter = hidden ? 'blur(10px)' : '';
+    }
+
+    // ─── BOTTOM NAV ───
+    function selectNav(el) {
+        document.querySelectorAll('.b-nav').forEach(n => n.classList.remove('active'));
+        el.classList.add('active');
+    }
+
+    // ─── BALANCE ANIMATION ───
+    document.addEventListener('DOMContentLoaded', () => {
+        const target = 26341.47;
+        const el = document.getElementById('balanceNum');
+        const start = performance.now();
+        const dur = 1800;
+        function tick(now) {
+            const p = Math.min((now - start) / dur, 1);
+            const ease = 1 - Math.pow(1 - p, 4);
+            const v = target * ease;
+            el.textContent = v.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+            if (p < 1) requestAnimationFrame(tick);
+        }
+        requestAnimationFrame(tick);
+
+        // Draw chart
+        drawChart();
+
+        // Draw NFTs
+        drawNFT('nft1', ['#6d28d9','#059669'], 'geometric');
+        drawNFT('nft2', ['#db2777','#6366f1'], 'circles');
+        drawNFT('nft3', ['#ec4899','#ef4444'], 'waves');
+        drawNFT('nft4', ['#2563eb','#06b6d4'], 'diamonds');
+    });
+
+    // ─── CHART DRAWING ───
+    function drawChart() {
+        const canvas = document.createElement('canvas');
+        canvas.width = 800;
+        canvas.height = 240;
+        const ctx = canvas.getContext('2d');
+
+        // Generate realistic looking price data
+        const points = [];
+        let price = 160;
+        for (let i = 0; i < 60; i++) {
+            price += (Math.random() - 0.42) * 8;
+            price = Math.max(140, Math.min(200, price));
+            points.push(price);
+        }
+        // Make the end go up
+        points.push(points[points.length-1] + 5);
+        points.push(points[points.length-1] + 3);
+        points.push(points[points.length-1] + 7);
+
+        const min = Math.min(...points) - 5;
+        const max = Math.max(...points) + 5;
+        const w = canvas.width;
+        const h = canvas.height;
+
+        // Gradient fill
+        const grad = ctx.createLinearGradient(0, 0, 0, h);
+        grad.addColorStop(0, 'rgba(59, 130, 246, 0.15)');
+        grad.addColorStop(0.5, 'rgba(59, 130, 246, 0.05)');
+        grad.addColorStop(1, 'rgba(59, 130, 246, 0)');
+
+        ctx.beginPath();
+        ctx.moveTo(0, h);
+        points.forEach((p, i) => {
+            const x = (i / (points.length - 1)) * w;
+            const y = h - ((p - min) / (max - min)) * h * 0.85;
+            if (i === 0) ctx.lineTo(x, y);
+            else {
+                const prev = points[i-1];
+                const px = ((i-1) / (points.length - 1)) * w;
+                const py = h - ((prev - min) / (max - min)) * h * 0.85;
+                const cpx = (px + x) / 2;
+                ctx.bezierCurveTo(cpx, py, cpx, y, x, y);
+            }
+        });
+        ctx.lineTo(w, h);
+        ctx.closePath();
+        ctx.fillStyle = grad;
+        ctx.fill();
+
+        // Line
+        ctx.beginPath();
+        points.forEach((p, i) => {
+            const x = (i / (points.length - 1)) * w;
+            const y = h - ((p - min) / (max - min)) * h * 0.85;
+            if (i === 0) ctx.moveTo(x, y);
+            else {
+                const prev = points[i-1];
+                const px = ((i-1) / (points.length - 1)) * w;
+                const py = h - ((prev - min) / (max - min)) * h * 0.85;
+                const cpx = (px + x) / 2;
+                ctx.bezierCurveTo(cpx, py, cpx, y, x, y);
+            }
+        });
+        ctx.strokeStyle = '#3b82f6';
+        ctx.lineWidth = 3;
+        ctx.stroke();
+
+        // Glow dot at end
+        const lastX = w;
+        const lastY = h - ((points[points.length-1] - min) / (max - min)) * h * 0.85;
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 6, 0, Math.PI * 2);
+        ctx.fillStyle = '#3b82f6';
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(lastX, lastY, 12, 0, Math.PI * 2);
+        ctx.fillStyle = 'rgba(59,130,246,0.2)';
+        ctx.fill();
+
+        const container = document.querySelector('.chart-canvas');
+        container.innerHTML = '';
+        canvas.style.width = '100%';
+        canvas.style.height = '100%';
+        container.appendChild(canvas);
+    }
+
+    // ─── NFT ART GENERATION ───
+    function drawNFT(id, colors, style) {
+        const canvas = document.getElementById(id);
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const w = canvas.width, h = canvas.height;
+
+        // Background gradient
+        const bg = ctx.createLinearGradient(0, 0, w, h);
+        bg.addColorStop(0, colors[0]);
+        bg.addColorStop(1, colors[1]);
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, w, h);
+
+        ctx.globalAlpha = 0.2;
+
+        if (style === 'geometric') {
+            for (let i = 0; i < 8; i++) {
+                ctx.save();
+                ctx.translate(w/2, h/2);
+                ctx.rotate((i * Math.PI) / 4);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-30, -3, 60, 6);
+                ctx.restore();
+            }
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.arc(w/2, h/2, 40, 0, Math.PI * 2);
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 3;
+            ctx.stroke();
+            ctx.beginPath();
+            ctx.arc(w/2, h/2, 25, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+        } else if (style === 'circles') {
+            for (let i = 0; i < 6; i++) {
+                ctx.beginPath();
+                ctx.arc(Math.random()*w, Math.random()*h, 20+Math.random()*40, 0, Math.PI*2);
+                ctx.fillStyle = '#fff';
+                ctx.fill();
+            }
+            ctx.globalAlpha = 0.4;
+            ctx.beginPath();
+            ctx.arc(w/2, h/2, 35, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+        } else if (style === 'waves') {
+            ctx.globalAlpha = 0.15;
+            for (let y = -20; y < h + 20; y += 25) {
+                ctx.beginPath();
+                for (let x = 0; x <= w; x += 5) {
+                    const yy = y + Math.sin(x * 0.03 + y * 0.1) * 15;
+                    if (x === 0) ctx.moveTo(x, yy);
+                    else ctx.lineTo(x, yy);
+                }
+                ctx.strokeStyle = '#fff';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 0.25;
+            ctx.beginPath();
+            ctx.arc(w/2, h/2, 30, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+        } else if (style === 'diamonds') {
+            for (let i = 0; i < 5; i++) {
+                const cx = 30 + Math.random() * (w - 60);
+                const cy = 30 + Math.random() * (h - 60);
+                const s = 15 + Math.random() * 25;
+                ctx.save();
+                ctx.translate(cx, cy);
+                ctx.rotate(Math.PI / 4);
+                ctx.fillStyle = '#fff';
+                ctx.fillRect(-s/2, -s/2, s, s);
+                ctx.restore();
+            }
+            ctx.globalAlpha = 0.3;
+            ctx.beginPath();
+            ctx.arc(w/2, h/2, 28, 0, Math.PI * 2);
+            ctx.fillStyle = '#fff';
+            ctx.fill();
+        }
+
+        ctx.globalAlpha = 1;
+    }
+
+    // ─── QR CODE DRAWING ───
+    function drawQR() {
+        const container = document.getElementById('qrContainer');
+        if (container.querySelector('canvas')) return;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = 400;
+        canvas.height = 400;
+        const ctx = canvas.getContext('2d');
+
+        // Draw a realistic-looking QR code pattern
+        const size = 21;
+        const cell = Math.floor(400 / (size + 8));
+        const offset = Math.floor((400 - size * cell) / 2);
+
+        // White background
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, 400, 400);
+
+        ctx.fillStyle = '#000000';
+
+        // Position detection patterns (3 corners)
+        function drawFinder(x, y) {
+            // Outer
+            for (let i = 0; i < 7; i++) {
+                for (let j = 0; j < 7; j++) {
+                    if (i === 0 || i === 6 || j === 0 || j === 6 || (i >= 2 && i <= 4 && j >= 2 && j <= 4)) {
+                        ctx.fillRect(offset + (x + i) * cell, offset + (y + j) * cell, cell, cell);
+                    }
+                }
+            }
+        }
+
+        drawFinder(0, 0);
+        drawFinder(size - 7, 0);
+        drawFinder(0, size - 7);
+
+        // Timing patterns
+        for (let i = 8; i < size - 8; i++) {
+            if (i % 2 === 0) {
+                ctx.fillRect(offset + i * cell, offset + 6 * cell, cell, cell);
+                ctx.fillRect(offset + 6 * cell, offset + i * cell, cell, cell);
+            }
+        }
+
+        // Random data modules (pseudo-random but consistent)
+        const seed = 42;
+        let s = seed;
+        function pseudoRandom() {
+            s = (s * 1103515245 + 12345) & 0x7fffffff;
+            return s / 0x7fffffff;
+        }
+
+        for (let y = 0; y < size; y++) {
+            for (let x = 0; x < size; x++) {
+                // Skip finder patterns and timing
+                if ((x < 8 && y < 8) || (x >= size - 8 && y < 8) || (x < 8 && y >= size - 8)) continue;
+                if (x === 6 || y === 6) continue;
+
+                if (pseudoRandom() > 0.55) {
+                    ctx.fillRect(offset + x * cell, offset + y * cell, cell, cell);
+                }
+            }
+        }
+
+        // Center logo
+        const cx = 400 / 2;
+        const cy = 400 / 2;
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(cx, cy, 28, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Draw CVault logo in center
+        const grad = ctx.createLinearGradient(cx - 16, cy - 16, cx + 16, cy + 16);
+        grad.addColorStop(0, '#3b82f6');
+        grad.addColorStop(1, '#8b5cf6');
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.arc(cx, cy, 16, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('CV', cx, cy + 1);
+
+        container.appendChild(canvas);
+    }
+
+    // Pay method switching
+    document.querySelectorAll('.pay-method').forEach(m => {
+        m.addEventListener('click', () => {
+            document.querySelectorAll('.pay-method').forEach(p => p.classList.remove('active'));
+            m.classList.add('active');
+        });
+    });
+
+    // Time filter switching
+    document.querySelectorAll('.time-btn').forEach(b => {
+        b.addEventListener('click', () => {
+            document.querySelectorAll('.time-btn').forEach(x => x.classList.remove('active'));
+            b.classList.add('active');
+        });
+    });
+    </script>
+</body>
+</html>
