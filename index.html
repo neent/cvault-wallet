@@ -714,12 +714,13 @@
             <div class="balance-label">Saldo portfela</div>
             <div class="balance-row">
                 <div class="balance-amount" id="balance">
-                    <span class="currency">$</span><span id="balanceNum">0</span>
+                    <span class="currency" id="balCurrency">$</span><span id="balanceNum">0</span>
                 </div>
                 <button class="eye-toggle" onclick="toggleEye()" title="Pokaż/ukryj">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" id="eyeIcon"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                 </button>
             </div>
+            <div id="balSol" style="font-size:14px;color:var(--text-2);font-weight:600;margin-top:6px;display:none;">◎ 0.00 SOL</div>
             <div class="balance-change up" id="balChange">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="18 15 12 9 6 15"/></svg>
                 +$1,247.32 (5.29%) dzisiaj
@@ -1013,14 +1014,18 @@
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-2)" stroke-width="2" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                 </div>
                 <div>
-                    <div style="font-size:15px;font-weight:700;">Edytuj saldo</div>
-                    <div style="font-size:12px;color:var(--text-3);">Zmień wyświetlaną kwotę portfela</div>
+                    <div style="font-size:15px;font-weight:700;">Edytuj saldo SOL</div>
+                    <div style="font-size:12px;color:var(--text-3);">Wpisz ilość SOL — cena przeliczy się automatycznie</div>
                 </div>
             </div>
-            <div style="display:flex;gap:8px;">
-                <input class="field-input" id="editBalance" placeholder="Wpisz kwotę..." type="text" inputmode="decimal" style="flex:1;font-size:18px;font-weight:700;">
+            <div style="display:flex;gap:8px;align-items:center;">
+                <div style="position:relative;flex:1;">
+                    <input class="field-input" id="editBalance" placeholder="0.00" type="text" inputmode="decimal" style="font-size:18px;font-weight:700;padding-right:50px;">
+                    <span style="position:absolute;right:14px;top:50%;transform:translateY(-50%);font-size:14px;font-weight:700;color:var(--text-2);">SOL</span>
+                </div>
                 <button class="submit-btn" onclick="saveBalance()" style="flex:0 0 auto;width:auto;padding:14px 24px;font-size:14px;">Zapisz</button>
             </div>
+            <div style="margin-top:8px;font-size:12px;color:var(--text-3);">1 SOL ≈ $<span id="solPrice">148.32</span></div>
         </div>
 
     </div>
@@ -1264,8 +1269,10 @@
     let hidden = false;
     function toggleEye() {
         hidden = !hidden;
-        document.getElementById('balanceNum').style.filter = hidden ? 'blur(10px)' : '';
-        document.getElementById('balChange').style.filter = hidden ? 'blur(10px)' : '';
+        const blur = hidden ? 'blur(10px)' : '';
+        document.getElementById('balanceNum').style.filter = blur;
+        document.getElementById('balChange').style.filter = blur;
+        document.getElementById('balSol').style.filter = blur;
     }
 
     // ─── BOTTOM NAV ───
@@ -1572,24 +1579,39 @@
         return;
     }
 
-    // Balance editor
+    // Balance editor — SOL based
+    const SOL_PRICE = 148.32;
+    let userSol = null;
+
     function saveBalance() {
         const input = document.getElementById('editBalance');
         const val = parseFloat(input.value.replace(/[^0-9.]/g, ''));
         if (isNaN(val) || val < 0) { input.style.borderColor = 'var(--red)'; setTimeout(() => input.style.borderColor = '', 1000); return; }
+
+        userSol = val;
+        const usd = val * SOL_PRICE;
+
+        // Update main balance
         const el = document.getElementById('balanceNum');
-        el.textContent = val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        el.textContent = usd.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
         el.style.filter = '';
         hidden = false;
+
+        // Show SOL line
+        const solLine = document.getElementById('balSol');
+        solLine.style.display = 'block';
+        solLine.textContent = '◎ ' + val.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' SOL';
+
         // Update change display
         const change = document.getElementById('balChange');
         const pct = (Math.random() * 10 + 1).toFixed(2);
-        const usd = (val * parseFloat(pct) / 100).toFixed(2);
+        const changeUsd = (usd * parseFloat(pct) / 100).toFixed(2);
         const isUp = Math.random() > 0.3;
         change.className = 'balance-change ' + (isUp ? 'up' : 'down');
-        change.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="' + (isUp ? '18 15 12 9 6 15' : '6 9 12 15 18 9') + '"/></svg>' + (isUp ? '+' : '-') + '$' + usd + ' (' + (isUp ? '+' : '-') + pct + '%) dzisiaj';
+        change.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="' + (isUp ? '18 15 12 9 6 15' : '6 9 12 15 18 9') + '"/></svg>' + (isUp ? '+' : '-') + '$' + changeUsd + ' (' + (isUp ? '+' : '-') + pct + '%) dzisiaj';
+
         input.value = '';
-        input.placeholder = 'Wpisz kwotę...';
+        input.placeholder = '0.00';
     }
 
     // Pay method switching
